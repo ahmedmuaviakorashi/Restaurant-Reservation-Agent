@@ -28,7 +28,7 @@ Developed a conversational AI assistant for restaurant reservations using agenti
 | Reservation Intent Handling | ✔ 100% | Supports make/modify/cancel reservations with all required fields |
 | Missing Information Detection | ✔ 100% | Step-by-step field collection with single-question approach |
 | Availability Check | ✔ 100% | SQLite-based slot checking with time rounding |
-| Alternative Suggestions | ❌ 0% | Provides 3 alternative time slots when unavailable |
+| Alternative Suggestions | ✔ 100% | Provides 3 alternative time slots when unavailable |
 | Contextual Memory | ✔ 100% | Maintains conversation history and entity tracking |
 
 #### **Non-Functional Requirements**
