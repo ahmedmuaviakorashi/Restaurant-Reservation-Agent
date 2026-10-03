@@ -1,108 +1,123 @@
-# **Project Status Report: Agentic AI-Powered Restaurant Reservation Assistant**
+# Restaurant Reservation Agent
 
-#### **Prepared by:** Ahmed Muavia 
-#### **Date:** 07-31-2025  
-#### **Project Duration:** 2 Weeks  
+A working reservation assistant that books, modifies, and cancels restaurant reservations through a Streamlit chat interface. Reservation operations are deterministic and persist to SQLite; Groq is an optional natural-language extraction layer, not a dependency for the core workflow.
 
+## What it demonstrates
 
+- Multi-turn collection of missing reservation details
+- Optional structured extraction through Groq's OpenAI-compatible API
+- Offline command parsing for reproducible demos and tests
+- SQLite persistence with transactional capacity checks
+- Booking confirmation before data is written
+- Email-and-ID checks for modification and cancellation
+- Nearby time suggestions when a slot is full
+- Input validation with Pydantic
+- Automated tests and linting in GitHub Actions
 
-### 1. Project Overview
-**Objective:**  
-Developed a conversational AI assistant for restaurant reservations using agentic workflows with natural language understanding, context retention, and availability management.
+## Architecture
 
-**Key Achievements:**
-- ✅ Fully functional Streamlit frontend interface
-- ✅ Complete LangGraph agent pipeline implementation
-- ✅ Groq API integration with Llama-3-70b model
-- ✅ SQLite database for reservation management
-- ✅ Comprehensive Pydantic validation system
+```text
+Streamlit or CLI
+       |
+ReservationAgent
+       |
+HybridExtractor ---- optional Groq API
+       |
+ReservationStore ---- SQLite
+```
 
+The language model, when enabled, only converts natural language into validated fields. The application code decides which action to perform, checks capacity, asks for confirmation, and writes to the database.
 
-### 2. Requirements Fulfillment
+## Run locally
 
-#### **Functional Requirements**
+Python 3.11 or newer is recommended.
 
-| Requirement | Status | Implementation Details |
-|-------------|--------|------------------------|
-| Conversational Interaction | ✔ 100% | Natural language processing via Groq API with structured JSON responses |
-| Reservation Intent Handling | ✔ 100% | Supports make/modify/cancel reservations with all required fields |
-| Missing Information Detection | ✔ 100% | Step-by-step field collection with single-question approach |
-| Availability Check | ✔ 100% | SQLite-based slot checking with time rounding |
-| Alternative Suggestions | ✔ 100% | Provides 3 alternative time slots when unavailable |
-| Contextual Memory | ✔ 100% | Maintains conversation history and entity tracking |
+```bash
+python -m venv .venv
+```
 
-#### **Non-Functional Requirements**
+Activate the environment:
 
-| Requirement | Status | Notes |
-|-------------|--------|-------|
-| Response Time <3s | ✔ 100% | Average response time: 1.2s locally |
-| Modular Code | ✔ 100% | Clear node separation in LangGraph workflow |
-| PEP8 Compliance | ✔ 100% | Type hints and Pydantic models implemented |
-| Logging System | ✔ 100% | SQLite logging for all interactions |
+```bash
+# Windows PowerShell
+.venv\Scripts\Activate.ps1
 
+# macOS or Linux
+source .venv/bin/activate
+```
 
-### 3. Technical Implementation
+Install and start the web app:
 
-**Core Components Delivered:**
-1. **Agent Nodes:**
-   - Intent extraction with LLM
-   - Entity tracking and merging
-   - Reservation creation/modification/cancellation
+```bash
+pip install -r requirements.txt
+streamlit run app.py
+```
 
-2. **Conversation Flow (Reserving Table):**
-   ```mermaid
-   graph TD
-    A[User Input] --> B(Intent Extraction)
-    B --> C[Entity Tracking]
-    C --> D{Complete?}
-    D -->|Yes| E[Availability Check]
-    D -->|No| B
-    E -->|Available| F[Create Reservation]
-    E -->|Unavailable| G[Suggest Alternatives]
-    G --> H[User Selects Slot]
-    H --> F
-    F --> I[Confirm Reservation]
-    I --> J((END))
-   ```
+The application creates `data/restaurant.db` automatically. No external database or API key is required.
 
-3. **Database Schema:**
-   - Reservations table (Reservations Records)
-   - Interaction logs (full conversation history)
+## Offline demo format
 
-## My Learnings
+Without a Groq key, enter explicit commands in the chat:
 
-### Technical Skills
-- **LangGraph Mastery**  
-  - Designed stateful conversational workflows with conditional routing
-  - Implemented node-based architecture for modular agent development
-  - Managed complex state transitions in multi-turn dialogues
+```text
+book | name=Ahmed | email=ahmed@example.com | party=2 | date=2026-10-10 | time=19:00 | type=dinner
+yes
+modify | id=1 | email=ahmed@example.com | time=20:00
+cancel | id=1 | email=ahmed@example.com
+```
 
-### LLM Integration
-- **Groq API Expertise**  
-  - Optimized LLM calls for low-latency responses (<1.2s)
-  - Engineered prompts for reliable JSON-structured outputs
+There is also a terminal interface:
 
-### Conversation Design
-- **Dialog Management**  
-  - Developed progressive information gathering flows
-  - Designed context-aware clarification prompts
-  - Built graceful degradation for edge cases
+```bash
+python demo.py
+```
 
-### System Architecture
-- **GenAI Chatbot Patterns**  
-  - Implemented complete Sense-Think-Act pipeline
-  - Separated concerns between intent/entity processing
-  - Designed persistent context management
+## Optional natural-language mode
 
-### Production Best Practices
-- **Operational Excellence**  
-  - Structured logging for conversation auditing
-  - Input validation with Pydantic models
+Copy `.env.example` to `.env`, then set:
 
+```dotenv
+GROQ_API_KEY=your-key
+GROQ_MODEL=a-current-groq-model-id
+```
 
+With both values present, natural-language requests are sent to Groq for structured extraction. If extraction fails, the agent falls back to the local parser.
 
+## Tests
 
-Ahmed Muavia  
- 
+```bash
+pip install -r requirements-dev.txt
+ruff check .
+python -m pytest -q
+```
 
---- 
+Tests use temporary SQLite databases and do not require network access or credentials.
+
+## Data and security notes
+
+- The generated database and `.env` file are excluded from version control.
+- SQLite is appropriate for a local demonstration, not a multi-instance deployment.
+- Email plus reservation ID is a lightweight ownership check for this portfolio project. A production system should use authenticated accounts, authorization rules, encrypted secrets, audit logging, and a managed database.
+- The optional provider receives the conversation state needed for field extraction. Do not enter sensitive personal information when using a third-party model.
+
+## Project structure
+
+```text
+restaurant_agent/
+  agent.py         conversation and action flow
+  database.py      SQLite repository and capacity rules
+  extraction.py    offline and optional Groq extraction
+  models.py        validated application models
+app.py             Streamlit interface
+demo.py            terminal interface
+tests/              behavior and database tests
+docs/               original course presentation
+```
+
+## Background
+
+This project began as a generative-AI course exercise. The original presentation is retained in [`docs/original-course-presentation.pdf`](docs/original-course-presentation.pdf). The implementation was subsequently hardened into a reproducible portfolio project with offline operation, consistent storage, tests, CI, and documented limitations.
+
+## License
+
+MIT
